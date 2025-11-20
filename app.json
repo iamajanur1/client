@@ -28,7 +28,8 @@
           "apiKey": "AIzaSyCLZfYpmH-aAphq-XP6oOiYszqIq1hn-1E"
         }
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.ajanur.creindiav2"
     },
     "web": {
       "favicon": "./assets/favicon.png"
