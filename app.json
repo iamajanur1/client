@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "creindiav2",
-    "slug": "creindiav2",
+    "name": "creindia",
+    "slug": "creindia",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
+    "icon": "./assets/Logo_Creindia.jpg",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -29,14 +29,15 @@
         }
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.ajanur.creindiav2"
+      "package": "com.ajanur.creindiav1"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "c6a1a5d7-a086-421c-a6be-2b116bb7dab6"
+        "projectId": "c6a1a5d7-a086-421c-a6be-2b116bb7dab6",
+        "apiUrl": "https://api.creindia.org"
       }
     }
   }
