@@ -16,7 +16,8 @@
       "supportsTablet": true,
       "config": {
         "googleMapsApiKey": "AIzaSyCLZfYpmH-aAphq-XP6oOiYszqIq1hn-1E"
-      }
+      },
+      "bundleIdentifier": "com.ajanur.creindiav1"
     },
     "android": {
       "adaptiveIcon": {
