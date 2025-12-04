@@ -108,62 +108,57 @@ export default function GeoLocation() {
   }, []);
 
   // 🔹 Fetch assigned route
-  useEffect(() => {
-    let mounted = true;
-    const fetchAssignedRoute = async () => {
-      try {
-        const token = await AsyncStorage.getItem('userToken');
-        const userData = await AsyncStorage.getItem('userData');
-        if (!userData) return;
-        const user = JSON.parse(userData);
-        const userId = user._id || user.id || user.userId;
-        if (!userId) return;
+useEffect(() => {
+  let mounted = true;
+  const fetchAssignedRoute = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (!token) return;
 
-        const res = await fetch(`${API_URL}/api/routes/${userId}`, {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
+      const res = await fetch(`${API_URL}/api/dataanalysis/myroute`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-        const data = await res.json();
-        let routeDoc = Array.isArray(data.routes)
-          ? data.routes[0]
-          : data.route || (Array.isArray(data) ? data[0] : data);
+      const data = await res.json();
 
-        if (!routeDoc) {
-          if (mounted) {
-            setAssignedRoute(null);
-            setRouteCoords([]);
-          }
-          return;
-        }
-
-        const mapped = mapRouteShape(routeDoc);
-        if (mounted && mapped) {
-          setAssignedRoute(mapped);
-          setRouteCoords(mapped.routeCoords || []);
-          if (mapped.startCoords && mapRef.current) {
-            setTimeout(() => {
-              mapRef.current.animateToRegion(
-                { ...mapped.startCoords, latitudeDelta: 0.01, longitudeDelta: 0.01 },
-                350
-              );
-            }, 350);
-          }
-        }
-      } catch (err) {
-        console.warn('GeoLocation: Failed to fetch assigned route:', err.message);
+      if (!data.success || !data.route) {
         if (mounted) {
           setAssignedRoute(null);
           setRouteCoords([]);
         }
+        return;
       }
-    };
-    fetchAssignedRoute();
-    return () => { mounted = false; };
-  }, []);
+
+      const mapped = mapRouteShape(data.route);
+      if (mounted && mapped) {
+        setAssignedRoute(mapped);
+        setRouteCoords(mapped.routeCoords || []);
+        if (mapped.startCoords && mapRef.current) {
+          setTimeout(() => {
+            mapRef.current.animateToRegion(
+              { ...mapped.startCoords, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+              350
+            );
+          }, 350);
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to fetch assigned route:', err.message);
+      if (mounted) {
+        setAssignedRoute(null);
+        setRouteCoords([]);
+      }
+    }
+  };
+
+  fetchAssignedRoute();
+  return () => { mounted = false; };
+}, []);
 
   // 🔹 Auto start watching position (no buttons)
   useEffect(() => {

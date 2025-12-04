@@ -6,7 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  ScrollView
+  ScrollView,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -27,86 +27,64 @@ export default function Register({ navigation }) {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  // ▼ State Dropdown Data
   const [states, setStates] = useState([]);
   const [selectedState, setSelectedState] = useState("");
-
-  // ▼ Organization Dropdown Data
   const [organizations, setOrganizations] = useState([]);
   const [selectedOrg, setSelectedOrg] = useState("");
 
-  // --------------------------
-  // Fetch list of states
-  // --------------------------
   useEffect(() => {
     const fetchStates = async () => {
       try {
         const res = await fetch(`${API_URL}/api/auth/organization-states`);
         const data = await res.json();
-
-        if (data.success) {
-          setStates(data.states);
-        }
+        if (data.success) setStates(data.states);
       } catch (err) {
         console.log("State fetch error:", err);
       }
     };
-
     fetchStates();
   }, []);
 
-  // --------------------------
-  // Fetch organizations by state
-  // --------------------------
   const fetchOrganizations = async (stateName) => {
     try {
       const res = await fetch(`${API_URL}/api/auth/organizations?state=${stateName}`);
       const data = await res.json();
-
-      if (data.success) {
-        setOrganizations(data.organizations);
-      }
+      if (data.success) setOrganizations(data.organizations);
     } catch (err) {
       console.log("Org fetch error:", err);
     }
   };
 
-  // when state dropdown changes
   const handleStateChange = (value) => {
     setSelectedState(value);
     setSelectedOrg("");
+    setOrganizations([]); // clear previous
     if (value) fetchOrganizations(value);
   };
 
-  // --------------------------
-  // Submit Registration
-  // --------------------------
   const handleRegister = async () => {
-    if (!name || !username || !email || !password) {
+    if (!name?.trim() || !username?.trim() || !email?.trim() || !password) {
       Alert.alert("Error", "Please fill all required fields");
       return;
     }
-
     if (!selectedState) {
       Alert.alert("Error", "Please select your state");
       return;
     }
-
     if (!selectedOrg) {
       Alert.alert("Error", "Please select your organization");
       return;
     }
 
     setIsLoading(true);
-
     try {
       const response = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          username,
-          email,
+          name: name.trim(),
+          username: username.trim(),
+          email: email.toLowerCase().trim(),
           password,
           dob,
           gender,
@@ -123,19 +101,14 @@ export default function Register({ navigation }) {
       if (data.success) {
         Alert.alert(
           "Request Submitted",
-          "Your account request was sent successfully.\nPlease wait for Organization and CreIndia Admin approval.",
+          "Your account request was sent successfully.\nPlease wait for approval.",
           [{ text: "OK", onPress: () => navigation.replace("Login") }]
         );
-
-        // ❌ DO NOT save token or userData — user is not approved yet
-        return;
-      }
-    else {
+      } else {
         Alert.alert("Error", data.message || "Registration failed");
       }
     } catch (err) {
-      console.log("Registration error:", err);
-      Alert.alert("Error", "Server error");
+      Alert.alert("Error", "Network error. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -146,57 +119,73 @@ export default function Register({ navigation }) {
       <View style={styles.card}>
         <Text style={styles.title}>Register</Text>
 
-        {/* Basic Fields */}
-        <TextInput style={styles.input} placeholder="Full Name" value={name} onChangeText={setName} />
-        <TextInput style={styles.input} placeholder="Username" value={username} onChangeText={setUsername} />
-        <TextInput style={styles.input} placeholder="Email" value={email} onChangeText={setEmail} autoCapitalize="none" />
+        <TextInput
+          style={styles.input}
+          placeholder="Full Name"
+          placeholderTextColor="#666666"
+          value={name}
+          onChangeText={setName}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Username"
+          placeholderTextColor="#666666"
+          value={username}
+          onChangeText={setUsername}
+        />
+        <TextInput
+          style={styles.input}
+          placeholder="Email"
+          placeholderTextColor="#666666"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
 
         <View style={styles.passwordContainer}>
           <TextInput
             style={styles.passwordInput}
             placeholder="Password"
+            placeholderTextColor="#666666"
             secureTextEntry={!showPassword}
             value={password}
             onChangeText={setPassword}
           />
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Ionicons name={showPassword ? "eye-off" : "eye"} size={22} color="#555" />
+            <Ionicons name={showPassword ? "eye-off" : "eye"} size={22} color="#666" />
           </TouchableOpacity>
         </View>
 
-        <TextInput style={styles.input} placeholder="DOB" value={dob} onChangeText={setDob} />
-        <TextInput style={styles.input} placeholder="Gender" value={gender} onChangeText={setGender} />
-        <TextInput style={styles.input} placeholder="Education" value={education} onChangeText={setEducation} />
+        <TextInput style={styles.input} placeholder="DOB (DD/MM/YYYY)" placeholderTextColor="#666666" value={dob} onChangeText={setDob} />
+        <TextInput style={styles.input} placeholder="Gender" placeholderTextColor="#666666" value={gender} onChangeText={setGender} />
+        <TextInput style={styles.input} placeholder="Education" placeholderTextColor="#666666" value={education} onChangeText={setEducation} />
 
         <TextInput
-          style={[styles.input, { height: 70 }]}
+          style={[styles.input, { height: 80, textAlignVertical: "top" }]}
           placeholder="Address"
+          placeholderTextColor="#666666"
           value={address}
           onChangeText={setAddress}
           multiline
         />
 
-        {/* ----------------- STATE DROPDOWN ----------------- */}
         <Text style={styles.label}>Select State</Text>
         <View style={styles.dropdown}>
-          <Picker
-            selectedValue={selectedState}
-            onValueChange={handleStateChange}
-          >
+          <Picker selectedValue={selectedState} onValueChange={handleStateChange}>
             <Picker.Item label="Select State" value="" />
-            {states.map((st, index) => (
-              <Picker.Item key={index} label={st} value={st} />
+            {states.map((st, i) => (
+              <Picker.Item key={i} label={st} value={st} />
             ))}
           </Picker>
         </View>
 
-        {/* ---------------- ORGANIZATION DROPDOWN ---------------- */}
         <Text style={styles.label}>Select Organization</Text>
         <View style={styles.dropdown}>
           <Picker
             selectedValue={selectedOrg}
-            onValueChange={(v) => setSelectedOrg(v)}
-            enabled={selectedState !== ""}
+            onValueChange={setSelectedOrg}
+            enabled={!!selectedState}
           >
             <Picker.Item label="Select Organization" value="" />
             {organizations.map((org) => (
@@ -205,13 +194,13 @@ export default function Register({ navigation }) {
           </Picker>
         </View>
 
-        {/* Register Button */}
         <TouchableOpacity
           style={[styles.registerButton, isLoading && styles.disabledButton]}
           onPress={handleRegister}
+          disabled={isLoading}
         >
           <Text style={styles.registerText}>
-            {isLoading ? "Registering..." : "Register"}
+            {isLoading ? "Submitting..." : "Register"}
           </Text>
         </TouchableOpacity>
 
@@ -225,17 +214,74 @@ export default function Register({ navigation }) {
 
 /* ----------------- STYLES ----------------- */
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: "#f0f0f0", paddingVertical: 20 },
-  card: { width: "90%", alignSelf: "center", backgroundColor: "#fff", borderRadius: 20, padding: 20, elevation: 5 },
-  title: { fontSize: 22, fontWeight: "bold", color: "#ff7b00", marginBottom: 20, alignSelf: "center" },
-  input: { width: "100%", height: 45, borderWidth: 1, borderColor: "#ddd", borderRadius: 10, marginBottom: 12, paddingHorizontal: 12 },
-  label: { fontSize: 14, fontWeight: "600", marginBottom: 5 },
-  dropdown: { borderWidth: 1, borderColor: "#ddd", borderRadius: 10, marginBottom: 12 },
-  passwordContainer: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#ddd", borderRadius: 10, paddingHorizontal: 12, marginBottom: 12 },
-  passwordInput: { flex: 1 },
-  registerButton: { backgroundColor: "#ff7b00", padding: 12, borderRadius: 10, alignItems: "center", marginTop: 10 },
-  registerText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
-  disabledButton: { opacity: 0.5 },
-  backBtn: { borderWidth: 1.5, borderColor: "#ff7b00", borderRadius: 10, paddingVertical: 12, alignItems: "center", marginTop: 12 },
+  container: { flexGrow: 1, backgroundColor: "#f5f5f5", paddingVertical: 30 },
+  card: {
+    width: "92%",
+    alignSelf: "center",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 22,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+  },
+  title: { fontSize: 26, fontWeight: "bold", color: "#ff7b00", marginBottom: 25, textAlign: "center" },
+
+  // MOST IMPORTANT: BLACK TEXT + GRAY PLACEHOLDER
+  input: {
+    width: "100%",
+    height: 50,
+    backgroundColor: "#f9f9f9",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    paddingHorizontal: 15,
+    marginBottom: 14,
+    fontSize: 16,
+    color: "#000000",                    // BLACK TEXT
+  },
+
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f9f9f9",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    marginBottom: 14,
+    paddingHorizontal: 15,
+  },
+  passwordInput: { flex: 1, height: 50, color: "#000000", fontSize: 16 },
+
+  label: { fontSize: 15, fontWeight: "600", color: "#333", marginBottom: 6, marginTop: 8 },
+  dropdown: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 12,
+    backgroundColor: "#f9f9f9",
+    marginBottom: 14,
+    overflow: "hidden",
+  },
+
+  registerButton: {
+    backgroundColor: "#ff7b00",
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 15,
+  },
+  registerText: { color: "#fff", fontSize: 17, fontWeight: "bold" },
+  disabledButton: { opacity: 0.6 },
+
+  backBtn: {
+    borderWidth: 2,
+    borderColor: "#ff7b00",
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: "center",
+    marginTop: 12,
+  },
   backText: { color: "#ff7b00", fontSize: 16, fontWeight: "bold" },
 });
